@@ -1,0 +1,21 @@
+# Node modules (if present)
+node_modules
+
+# Logs
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker-related
+Dockerfile
+.dockerignore
+
+# Misc
+*.zip
+*.tar.gz

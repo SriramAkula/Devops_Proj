@@ -1,0 +1,32 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: 5% auto;
+    padding: 2em;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  
+  input, button {
+    margin: 1em 0;
+    padding: 0.5em;
+    font-size: 1em;
+  }
+  
+  #videoPreview {
+    max-width: 100%;
+    margin-top: 1em;
+  }
+  
+  #output {
+    font-weight: bold;
+    color: green;
+  }
+  

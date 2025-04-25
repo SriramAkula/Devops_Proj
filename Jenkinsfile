@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        timeout(time: 30, unit: 'MINUTES') // ⏱️ Prevents checkout timeout
+    }
+
     environment {
         DOCKER_IMAGE = 'sriramakula212/devops-project' // Docker image name
         DOCKER_TAG = 'latest'
@@ -10,16 +14,32 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clean Workspace') {
             steps {
-                // Pull code from your Git repository using GitHub credentials
-                git credentialsId: "${GITHUB_CREDENTIALS}", url: 'https://github.com/SriramAkula/Devops_Proj.git' // GitHub repo URL
+                // 🧹 Remove all files from the workspace to avoid .git issues
+                deleteDir()
+            }
+        }
+
+        stage('Clone Repo') {
+            steps {
+                // ⚡ Faster clone with shallow history
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']], // Adjust branch name as needed (e.g., '*/master')
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/SriramAkula/Devops_Proj.git',
+                        credentialsId: "${GITHUB_CREDENTIALS}"
+                    ]],
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]]
+                ])
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build the Docker image with the specified tag
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
@@ -27,12 +47,17 @@ pipeline {
 
         stage('Push to Docker Hub') {
             when {
-                branch 'main'
+                branch 'main' // Push to Docker Hub only for the main branch
             }
             steps {
                 script {
-                    docker.withRegistry("${REGISTRY}", REGISTRY_CREDENTIALS) {
-                        docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
+                    // Login to Docker Hub and push the built image
+                    withCredentials([usernamePassword(credentialsId: "${REGISTRY_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh '''
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                            docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        '''
                     }
                 }
             }
@@ -40,10 +65,11 @@ pipeline {
 
         stage('Deploy to Server') {
             when {
-                branch 'main'
+                branch 'main' // Deploy only on the main branch
             }
             steps {
                 script {
+                    // Replace with actual server IP and deploy the container
                     sh '''
                         ssh -o StrictHostKeyChecking=no user@your-server-ip << EOF
                             docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
